@@ -1,0 +1,60 @@
+{
+    "name": "verbb/tiptap",
+    "description": "A Craft CMS library for working with Tiptap rich text content.",
+    "version": "1.0.0",
+    "keywords": [
+        "craft",
+        "craftcms",
+        "tiptap",
+        "prosemirror",
+        "rich-text"
+    ],
+    "support": {
+        "email": "support@verbb.io",
+        "issues": "https://github.com/verbb/tiptap/issues?state=open",
+        "source": "https://github.com/verbb/tiptap",
+        "docs": "https://verbb.io/packages/tiptap",
+        "rss": "https://github.com/verbb/tiptap/commits/main.atom"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Verbb",
+            "homepage": "https://verbb.io"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "craftcms/cms": "^5.0.0",
+        "ueberdosis/tiptap-php": "^2.0"
+    },
+    "suggest": {
+        "craftcms/feed-me": "Required to use the Feed Me field integration."
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "verbb\\tiptap\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "verbb\\tiptap\\tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true,
+        "allow-plugins": {
+            "yiisoft/yii2-composer": true,
+            "craftcms/plugin-installer": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
