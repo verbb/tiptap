@@ -113,7 +113,7 @@ Be sure to check out the full [documentation](https://verbb.io/packages/tiptap).
 Store the **content array** (`doc.content`), not the full `{ type: 'doc' }` wrapper. This matches `@verbb/plugin-kit-tiptap-core` and `@verbb/plugin-kit-web` serialization.
 
 ## Documentation
-Visit the [Auth package page](https://verbb.io/packages/tiptap) for all documentation and developer resources.
+Visit the [Tiptap package page](https://verbb.io/packages/tiptap) for all documentation and developer resources.
 
 ## Credits
 Built on [ueberdosis/tiptap-php](https://github.com/ueberdosis/tiptap-php).
