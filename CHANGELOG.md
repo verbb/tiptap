@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1 - 2026-08-18
+
+### Fixed
+- Variable tag HTML output no longer duplicates tokens by rendering attrs (`value`, `label`, etc.) onto the `<span>` in addition to `renderText()` content. Fixes duplicated `{allFields}` (and similar) resolution in Formie notification emails. [#2928](https://github.com/verbb/formie/issues/2928).
+
 ## 1.0.0 - 2026-07-10
 
 ### Added

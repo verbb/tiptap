@@ -34,13 +34,22 @@ class RichTextTest extends TestCase
                         'attrs' => [
                             'label' => 'Total',
                             'value' => '{field:total}',
+                            'openOnInsert' => false,
                         ],
                     ],
                 ],
             ],
         ]);
 
-        $this->assertStringContainsString('{field:total}', $richText->toHtml());
+        $html = $richText->toHtml();
+
+        // Token must appear once as text content — not also as HTML attributes
+        // (which would double-resolve under Formie References::parseContent).
+        $this->assertSame(1, substr_count($html, '{field:total}'));
+        $this->assertStringContainsString('data-type="variableTag"', $html);
+        $this->assertStringNotContainsString('value="{field:total}"', $html);
+        $this->assertStringNotContainsString('label="Total"', $html);
+        $this->assertStringNotContainsString('openOnInsert=', $html);
         $this->assertSame('{field:total}', $richText->toPlainText());
     }
 

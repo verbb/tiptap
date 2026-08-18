@@ -53,13 +53,16 @@ class VariableTag extends Node
 
     public function addAttributes()
     {
+        // Keep attrs on the ProseMirror node for editor/API use, but do not emit them
+        // on the HTML <span>. renderText() already serializes the token as text content;
+        // writing value="{…}" into attributes would duplicate tokens for References::parseContent().
         return [
-            'label' => [],
-            'value' => [],
-            'openOnInsert' => [],
-            'default' => [],
-            'transformerId' => [],
-            'transformerParams' => [],
+            'label' => ['rendered' => false],
+            'value' => ['rendered' => false],
+            'openOnInsert' => ['rendered' => false],
+            'default' => ['rendered' => false],
+            'transformerId' => ['rendered' => false],
+            'transformerParams' => ['rendered' => false],
         ];
     }
 
