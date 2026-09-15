@@ -83,6 +83,78 @@ class RichTextTest extends TestCase
         $this->assertStringContainsString('<strong>HTML</strong>', $richText->toHtml());
     }
 
+    public function testSmallCapsRoundTripsThroughTextStyle(): void
+    {
+        $richText = RichText::fromHtml('<p><span style="font-variant-caps: small-caps">NASA</span></p>');
+        $text = $richText->getSchema()[0]['content'][0];
+
+        $this->assertSame([[
+            'type' => 'textStyle',
+            'attrs' => ['fontVariantCaps' => 'small-caps'],
+        ]], $text['marks']);
+        $this->assertStringContainsString('font-variant-caps: small-caps', $richText->toHtml());
+        $this->assertSame('NASA', $richText->toPlainText());
+    }
+
+    public function testRejectsUnsupportedFontVariantCapsValues(): void
+    {
+        $richText = RichText::fromHtml('<p><span style="font-variant-caps: titling-caps">NASA</span></p>');
+        $mark = $richText->getSchema()[0]['content'][0]['marks'][0];
+
+        $this->assertArrayNotHasKey('attrs', $mark);
+        $this->assertStringNotContainsString('font-variant-caps', $richText->toHtml());
+    }
+
+    public function testTextStyleKitAttributesRoundTripTogether(): void
+    {
+        $richText = RichText::fromHtml('<p><span style="font-family: Georgia, serif; font-size: 18px; color: #2563eb; background-color: #dbeafe; line-height: 1.5; font-variant-caps: small-caps">Styled</span></p>');
+        $attributes = $richText->getSchema()[0]['content'][0]['marks'][0]['attrs'];
+
+        $this->assertSame([
+            'color' => '#2563eb',
+            'backgroundColor' => '#dbeafe',
+            'fontFamily' => 'Georgia, serif',
+            'fontSize' => '18px',
+            'lineHeight' => '1.5',
+            'fontVariantCaps' => 'small-caps',
+        ], $attributes);
+
+        $html = $richText->toHtml();
+        $this->assertStringContainsString('font-family: Georgia, serif', $html);
+        $this->assertStringContainsString('font-size: 18px', $html);
+        $this->assertStringContainsString('background-color: #dbeafe', $html);
+        $this->assertStringContainsString('font-variant-caps: small-caps', $html);
+    }
+
+    public function testEmptyTextStyleAttributesDoNotRenderEmptyCss(): void
+    {
+        $richText = RichText::from([[
+            'type' => 'paragraph',
+            'content' => [[
+                'type' => 'text',
+                'text' => 'NASA',
+                'marks' => [[
+                    'type' => 'textStyle',
+                    'attrs' => [
+                        'color' => '',
+                        'backgroundColor' => '',
+                        'fontFamily' => '',
+                        'fontSize' => '',
+                        'lineHeight' => '',
+                        'fontVariantCaps' => 'small-caps',
+                    ],
+                ]],
+            ]],
+        ]]);
+
+        $html = $richText->toHtml();
+        $this->assertStringContainsString('font-variant-caps: small-caps', $html);
+        $this->assertStringNotContainsString('color: ;', $html);
+        $this->assertStringNotContainsString('font-family: ;', $html);
+        $this->assertStringNotContainsString('font-size: ;', $html);
+        $this->assertStringNotContainsString('line-height: ;', $html);
+    }
+
     public function testNl2brModeFlattensParagraphs(): void
     {
         $richText = RichText::from([

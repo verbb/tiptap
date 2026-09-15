@@ -1,10 +1,16 @@
 <?php
 namespace verbb\tiptap;
 
+use verbb\tiptap\extensions\BackgroundColor;
 use verbb\tiptap\extensions\CraftLink;
+use verbb\tiptap\extensions\FontSize;
+use verbb\tiptap\extensions\FontVariantCaps;
+use verbb\tiptap\extensions\LineHeight;
 use verbb\tiptap\extensions\VariableTag;
 
 use Tiptap\Editor;
+use Tiptap\Extensions\Color;
+use Tiptap\Extensions\FontFamily;
 use Tiptap\Extensions\StarterKit;
 use Tiptap\Extensions\TextAlign;
 use Tiptap\Marks;
@@ -24,6 +30,13 @@ class EditorFactory
                 ],
             ]),
             new Marks\Highlight,
+            new Marks\TextStyle,
+            new Color,
+            new BackgroundColor,
+            new FontFamily,
+            new FontSize,
+            new LineHeight,
+            new FontVariantCaps,
             new CraftLink([
                 'HTMLAttributes' => [
                     'target' => null,
