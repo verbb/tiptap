@@ -1,10 +1,9 @@
 # Changelog
 
-## Unreleased
+## 1.0.2 - 2026-09-15
 
 ### Added
-- Add Plugin Kit-compatible TextStyle parsing/rendering for font family, font
-  size, text color, background color, line height, and Small caps.
+- Add Plugin Kit-compatible TextStyle parsing/rendering for font family, font size, text color, background color, line height, and Small caps.
 
 ## 1.0.1 - 2026-08-18
 
