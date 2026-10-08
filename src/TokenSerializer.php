@@ -1,6 +1,8 @@
 <?php
 namespace verbb\tiptap;
 
+use stdClass;
+
 class TokenSerializer
 {
     // Static Methods
@@ -18,7 +20,7 @@ class TokenSerializer
         $items = is_array($content) ? $content : [];
         $result = '';
 
-        self::_visitNodes($items, function (array $node) use (&$result): void {
+        self::_visitNodes($items, function(array $node) use (&$result): void {
             $type = $node['type'] ?? null;
 
             if ($type === 'text') {
@@ -42,10 +44,18 @@ class TokenSerializer
             return '';
         }
 
+        // The HTML renderer hydrates nested attributes as objects; stored content
+        // and plain-text rendering provide arrays for the same parameters.
+        $params = $attrs['transformerParams'] ?? null;
+
+        if ($params instanceof stdClass) {
+            $params = (array)$params;
+        }
+
         return self::serializeTokenMetadata($value, [
             'defaultIfEmpty' => isset($attrs['default']) ? (string)$attrs['default'] : null,
             'transformerId' => isset($attrs['transformerId']) ? (string)$attrs['transformerId'] : null,
-            'transformerParams' => is_array($attrs['transformerParams'] ?? null) ? $attrs['transformerParams'] : null,
+            'transformerParams' => is_array($params) ? $params : null,
         ]);
     }
 
@@ -72,7 +82,7 @@ class TokenSerializer
             }
         }
 
-        $tokenBody = implode(';', array_filter($parts, fn ($part) => $part !== ''));
+        $tokenBody = implode(';', array_filter($parts, fn($part) => $part !== ''));
         $defaultIfEmpty = trim((string)($metadata['defaultIfEmpty'] ?? ''));
 
         return $defaultIfEmpty !== '' ? '{' . $tokenBody . '|' . $defaultIfEmpty . '}' : '{' . $tokenBody . '}';

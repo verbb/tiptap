@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- Fixed variable transform parameters being omitted from HTML output.
+
 ## 1.0.2 - 2026-09-15
 
 ### Added

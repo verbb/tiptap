@@ -75,6 +75,24 @@ class RichTextTest extends TestCase
         $this->assertSame('{field:total;transform=round;decimals=2|0}', $value);
     }
 
+    public function testPreservesTransformParametersInHtmlAndPlainText(): void
+    {
+        $richText = RichText::from([[
+            'type' => 'paragraph',
+            'content' => [[
+                'type' => 'variableTag',
+                'attrs' => [
+                    'value' => '{field:items;scope=all}',
+                    'transformerId' => 'join',
+                    'transformerParams' => ['separator' => ' | '],
+                ],
+            ]],
+        ]]);
+        $expected = '{field:items;scope=all;transform=join;separator=%20%7C%20}';
+        $this->assertSame($expected, $richText->toPlainText());
+        $this->assertStringContainsString($expected, $richText->toHtml());
+    }
+
     public function testImportsHtmlIntoSchema(): void
     {
         $richText = RichText::fromHtml('<p>Imported <strong>HTML</strong></p>');
