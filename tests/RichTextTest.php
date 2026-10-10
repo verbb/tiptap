@@ -23,6 +23,50 @@ class RichTextTest extends TestCase
         $this->assertSame('Hello world', $richText->toPlainText());
     }
 
+    public function testRejectsMalformedAndUnsafeLinkTargets(): void
+    {
+        foreach ([['invalid'], 42, 'javascript:alert(1)'] as $href) {
+            $richText = RichText::from([[
+                'type' => 'paragraph',
+                'content' => [[
+                    'type' => 'text',
+                    'text' => 'Linked text',
+                    'marks' => [[
+                        'type' => 'link',
+                        'attrs' => ['href' => $href],
+                    ]],
+                ]],
+            ]]);
+
+            $html = $richText->toHtml();
+
+            $this->assertStringContainsString('Linked text', $html);
+            $this->assertStringNotContainsString('invalid', $html);
+            $this->assertStringNotContainsString('javascript:', $html);
+        }
+    }
+
+    public function testPreservesValidLinkTargets(): void
+    {
+        $richText = RichText::from([[
+            'type' => 'paragraph',
+            'content' => [[
+                'type' => 'text',
+                'text' => 'Linked text',
+                'marks' => [[
+                    'type' => 'link',
+                    'attrs' => [
+                        'href' => 'https://verbb.io/',
+                    ],
+                ]],
+            ]],
+        ]]);
+
+        $html = $richText->toHtml();
+
+        $this->assertStringContainsString('href="https://verbb.io/"', $html);
+    }
+
     public function testRendersVariableTagsAsTokens(): void
     {
         $richText = RichText::from([

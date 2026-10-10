@@ -18,6 +18,12 @@ class CraftLink extends Link
     public function renderHTML($mark, $HTMLAttributes = [])
     {
         $href = $HTMLAttributes['href'] ?? ($mark->attrs->href ?? '');
+
+        if (!is_string($href) || !$this->options['isAllowedUri']($href)) {
+            $href = '';
+            $HTMLAttributes['href'] = '';
+        }
+
         $attributes = HTML::mergeAttributes($this->options['HTMLAttributes'], $HTMLAttributes);
 
         if (is_string($href) && $href !== '') {
@@ -58,7 +64,7 @@ class CraftLink extends Link
 
     private static function _parseRefTags(string $value): string
     {
-        $value = preg_replace_callback('/([^\'"\?#]*)(\?[^\'"\?#]+)?(#[^\'"\?#]+)?(?:#|%23)([\w]+)\:(\d+)(?:@(\d+))?(\:(?:transform\:)?' . HandleValidator::$handlePattern . ')?/', function ($matches) {
+        $value = preg_replace_callback('/([^\'"\?#]*)(\?[^\'"\?#]+)?(#[^\'"\?#]+)?(?:#|%23)([\w]+)\:(\d+)(?:@(\d+))?(\:(?:transform\:)?' . HandleValidator::$handlePattern . ')?/', function($matches) {
             [, $url, $query, $hash, $elementType, $ref, $siteId, $transform] = array_pad($matches, 10, null);
 
             $ref = $elementType . ':' . $ref . ($siteId ? "@$siteId" : '') . ($transform ?: ':url');

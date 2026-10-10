@@ -26,7 +26,7 @@
     "require": {
         "php": "^8.2",
         "craftcms/cms": "^5.0.0",
-        "ueberdosis/tiptap-php": "^2.0"
+        "ueberdosis/tiptap-php": "^2.1.1"
     },
     "suggest": {
         "craftcms/feed-me": "Required to use the Feed Me field integration."
