@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.4 - 2026-10-10
 
 ### Fixed
 - Fixed a high-severity input validation vulnerability. ([GHSA-4595-7fjw-r3jh](https://github.com/advisories/GHSA-4595-7fjw-r3jh))
