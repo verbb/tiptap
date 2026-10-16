@@ -2,7 +2,9 @@
 
 namespace verbb\tiptap\tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Tiptap\Nodes\Paragraph;
 use verbb\tiptap\RichText;
 use verbb\tiptap\TokenSerializer;
 
@@ -236,9 +238,75 @@ class RichTextTest extends TestCase
 
         $html = $richText->toHtml(nl2br: true);
 
-        $this->assertStringNotContainsString('<p>', $html);
-        $this->assertStringContainsString('Line one', $html);
-        $this->assertStringContainsString('Line two', $html);
+        $this->assertSame('Line one<br>Line two', $html);
+    }
+
+    public static function paragraphAlignments(): array
+    {
+        return array_map(fn($alignment) => [$alignment], ['start', 'left', 'center', 'right', 'justify', 'end']);
+    }
+
+    #[DataProvider('paragraphAlignments')]
+    public function testNl2brModeFlattensAlignedParagraphs(string $alignment): void
+    {
+        $schema = [[
+            'type' => 'paragraph',
+            'attrs' => ['textAlign' => $alignment],
+            'content' => [['type' => 'text', 'text' => 'Hello']],
+        ]];
+        // Exercise stored JSON, including the logical alignment found in legacy Formie values.
+        $richText = RichText::from(json_encode($schema));
+        $normalizedSchema = $richText->getSchema();
+        $normalHtml = $alignment === 'left' ? '<p>Hello</p>' : '<p style="text-align: ' . $alignment . ';">Hello</p>';
+
+        $this->assertSame($normalHtml, $richText->toHtml(nl2br: false));
+        $this->assertSame('Hello', $richText->toHtml(nl2br: true));
+        $this->assertSame($normalizedSchema, $richText->getSchema());
+    }
+
+    public function testNl2brModePreservesInlineMarkupAndParagraphSpacing(): void
+    {
+        $richText = RichText::fromHtml('<p style="text-align: start">First <strong>bold</strong><br>line</p><p></p><p style="text-align: right"><a href="https://verbb.io/">Last</a></p><p style="text-align: center"></p>');
+
+        $this->assertSame(
+            'First <strong>bold</strong><br>line<br><br><a href="https://verbb.io/">Last</a>',
+            $richText->toHtml(nl2br: true),
+        );
+    }
+
+    public function testNl2brModePreservesOtherBlocksAndFlattensNestedParagraphs(): void
+    {
+        $richText = RichText::fromHtml('<h2 style="text-align: center">Heading</h2><blockquote><p style="text-align: start">Quote</p></blockquote><ul><li><p style="text-align: right">Item</p></li></ul><pre><code>Code</code></pre>');
+
+        $this->assertSame(
+            '<h2 style="text-align: center;">Heading</h2><blockquote>Quote<br></blockquote><ul><li>Item<br></li></ul><pre><code>Code</code></pre>',
+            $richText->toHtml(nl2br: true),
+        );
+    }
+
+    public function testNl2brModeFlattensParagraphsWithExtensionAttributes(): void
+    {
+        $richText = RichText::fromHtml('<p>Hello</p>');
+        $extensions = [new Paragraph(['HTMLAttributes' => [
+            'class' => 'custom-paragraph',
+            'data-label' => 'A > B "quoted"',
+        ]])];
+
+        // Generated attribute values are escaped before paragraph flattening occurs.
+        $this->assertSame('Hello', $richText->toHtml(nl2br: true, additionalExtensions: $extensions));
+    }
+
+    public function testNl2brModeRunsBeforeReferenceResolution(): void
+    {
+        $richText = RichText::fromHtml('<p style="text-align: start">Token</p>');
+
+        $html = $richText->toHtml(function(string $html): string {
+            $this->assertSame('Token', $html);
+
+            return '<p class="resolved">Resolved</p>';
+        }, nl2br: true);
+
+        $this->assertSame('<p class="resolved">Resolved</p>', $html);
     }
 
     public function testJsonSerializeReturnsSchema(): void

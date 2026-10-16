@@ -88,7 +88,8 @@ class RichText implements JsonSerializable, Stringable
         $html = EditorFactory::contentToHtml($this->_value, $additionalExtensions);
 
         if ($nl2br) {
-            $html = str_replace(['<p>', '</p>'], ['', '<br>'], $html);
+            // Flatten attributed paragraphs too, so removing their closing tags cannot leave unclosed wrappers.
+            $html = preg_replace(['/<p(?:\s[^>]*)?>/', '/<\/p>/'], ['', '<br>'], $html) ?? $html;
             $html = preg_replace('/(<br>)+$/', '', $html) ?? $html;
         }
 
