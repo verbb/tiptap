@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.5 - 2026-10-16
 
 ### Fixed
 - Fixed unclosed paragraph tags when rendering aligned paragraphs with `nl2br` enabled. ([#1](https://github.com/verbb/tiptap/issues/1))
