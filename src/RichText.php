@@ -97,7 +97,8 @@ class RichText implements JsonSerializable, Stringable
             $html = $resolveReferences($html);
         }
 
-        return Normalizer::stripInvisibleChars(html_entity_decode($html));
+        // Serializers and reference resolvers escape text and attributes; decoding would turn them back into markup.
+        return Normalizer::stripInvisibleChars($html);
     }
 
     public function toPlainText(?callable $resolveReferences = null, array $additionalExtensions = []): string

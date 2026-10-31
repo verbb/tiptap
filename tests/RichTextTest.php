@@ -309,6 +309,126 @@ class RichTextTest extends TestCase
         $this->assertSame('<p class="resolved">Resolved</p>', $html);
     }
 
+    public function testKeepsTextNodeMarkupEscaped(): void
+    {
+        $richText = RichText::from($this->_paragraph('Typed: <img src=x onerror=alert(1)><script>alert(2)</script>'));
+        $html = $richText->toHtml();
+
+        $this->assertSame('<p>Typed: &lt;img src=x onerror=alert(1)&gt;&lt;script&gt;alert(2)&lt;/script&gt;</p>', $html);
+        $this->assertSame(['p'], $this->_elementNames($html));
+        $this->assertSame('Typed: <img src=x onerror=alert(1)><script>alert(2)</script>', $this->_text($html));
+    }
+
+    public function testKeepsEscapedEntityTextLiteral(): void
+    {
+        $richText = RichText::from($this->_paragraph('&lt;script&gt;alert(1)&lt;/script&gt;'));
+        $html = $richText->toHtml();
+
+        $this->assertSame(['p'], $this->_elementNames($html));
+        $this->assertSame('&lt;script&gt;alert(1)&lt;/script&gt;', $this->_text($html));
+    }
+
+    public function testKeepsImportedEscapedEntitiesAsText(): void
+    {
+        // Markdown-processed text and other HTML strings carry user text as entities.
+        foreach ([false, true] as $nl2br) {
+            $html = RichText::from('<p>Bio: &lt;script&gt;alert(1)&lt;/script&gt; &amp; &lt;img src=x onerror=alert(2)&gt;</p>')->toHtml(nl2br: $nl2br);
+
+            $this->assertNotContains('script', $this->_elementNames($html));
+            $this->assertNotContains('img', $this->_elementNames($html));
+            $this->assertStringContainsString('Bio: <script>alert(1)</script> & <img src=x onerror=alert(2)>', $this->_text($html));
+        }
+    }
+
+    public function testKeepsReferenceEscapingFromResolver(): void
+    {
+        $richText = RichText::from($this->_paragraph('Hello {name}'));
+        $html = $richText->toHtml(fn(string $html): string => str_replace('{name}', htmlspecialchars('<img src=x onerror=alert(1)> & "Tom"', ENT_QUOTES), $html));
+
+        $this->assertSame(['p'], $this->_elementNames($html));
+        $this->assertSame('Hello <img src=x onerror=alert(1)> & "Tom"', $this->_text($html));
+    }
+
+    public function testKeepsQuotedLinkTargetsInsideTheAttribute(): void
+    {
+        $richText = RichText::from([[
+            'type' => 'paragraph',
+            'content' => [[
+                'type' => 'text',
+                'text' => 'Linked text',
+                'marks' => [[
+                    'type' => 'link',
+                    'attrs' => ['href' => 'https://verbb.io/" onmouseover="alert(1)'],
+                ]],
+            ]],
+        ]]);
+
+        $link = $this->_parse($richText->toHtml())->getElementsByTagName('a')->item(0);
+
+        $this->assertNotNull($link);
+        $this->assertFalse($link->hasAttribute('onmouseover'));
+        $this->assertSame('https://verbb.io/" onmouseover="alert(1)', $link->getAttribute('href'));
+    }
+
+    public function testPreservesSpecialCharactersWhenRendered(): void
+    {
+        $text = "Café — “quotes” & <b> it's";
+        $richText = RichText::from($this->_paragraph($text));
+        $html = $richText->toHtml();
+
+        $this->assertSame('<p>Café — “quotes” &amp; &lt;b&gt; it&#039;s</p>', $html);
+        $this->assertSame($text, $this->_text($html));
+        $this->assertSame($text, $richText->toPlainText());
+        $this->assertSame($text, $this->_text($richText->toHtml(nl2br: true)));
+    }
+
+    public function testPreservesSpecialCharactersInLinkTargets(): void
+    {
+        $richText = RichText::from([[
+            'type' => 'paragraph',
+            'content' => [[
+                'type' => 'text',
+                'text' => 'Linked text',
+                'marks' => [[
+                    'type' => 'link',
+                    'attrs' => ['href' => 'https://verbb.io/?a=1&b=café'],
+                ]],
+            ]],
+        ]]);
+
+        $link = $this->_parse($richText->toHtml())->getElementsByTagName('a')->item(0);
+
+        $this->assertSame('https://verbb.io/?a=1&b=café', $link?->getAttribute('href'));
+    }
+
+    public function testKeepsVariableTokensResolvableBesideEscapedText(): void
+    {
+        $richText = RichText::from([[
+            'type' => 'paragraph',
+            'content' => [
+                ['type' => 'text', 'text' => 'Tom & Jerry: '],
+                [
+                    'type' => 'variableTag',
+                    'attrs' => [
+                        'value' => '{field:name}',
+                        'default' => 'Guest',
+                        'transformerId' => 'join',
+                        'transformerParams' => ['separator' => ' & '],
+                    ],
+                ],
+            ],
+        ]]);
+        $token = '{field:name;transform=join;separator=%20%26%20|Guest}';
+        $html = $richText->toHtml(function(string $html) use ($token): string {
+            $this->assertStringContainsString($token, $html);
+
+            return str_replace($token, htmlspecialchars('<b>Ann</b>'), $html);
+        });
+
+        $this->assertSame(['p', 'span'], $this->_elementNames($html));
+        $this->assertSame('Tom & Jerry: <b>Ann</b>', $this->_text($html));
+    }
+
     public function testJsonSerializeReturnsSchema(): void
     {
         $schema = [
@@ -323,5 +443,36 @@ class RichTextTest extends TestCase
         $richText = RichText::from($schema);
 
         $this->assertSame($schema, $richText->jsonSerialize());
+    }
+
+    private function _paragraph(string $text): array
+    {
+        return [['type' => 'paragraph', 'content' => [['type' => 'text', 'text' => $text]]]];
+    }
+
+    private function _text(string $html): string
+    {
+        return $this->_parse($html)->documentElement->textContent;
+    }
+
+    private function _elementNames(string $html): array
+    {
+        $names = [];
+
+        foreach ($this->_parse($html)->getElementsByTagName('*') as $element) {
+            if ($element->nodeName !== 'root') {
+                $names[] = $element->nodeName;
+            }
+        }
+
+        return $names;
+    }
+
+    private function _parse(string $html): \DOMDocument
+    {
+        $document = new \DOMDocument();
+        $document->loadHTML('<?xml encoding="UTF-8"><root>' . $html . '</root>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NOERROR);
+
+        return $document;
     }
 }
